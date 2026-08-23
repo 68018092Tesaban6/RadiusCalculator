@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chord Radius Calculator - เครื่องคำนวณรัศมีจากคอร์ด</title>
+<meta name="description" content="เครื่องคำนวณรัศมีวงกลมจากความยาวคอร์ดและระยะ H พร้อมแสดงวิธีทำและภาพประกอบ">
+
+<style>
+body{
+    font-family:Arial,sans-serif;
+    background:#f3f3f3;
+    text-align:center;
+    padding:20px;
+}
+
+.container{
+    max-width:700px;
+    margin:auto;
+    background:white;
+    padding:20px;
+    border-radius:15px;
+}
+
+input{
+    width:120px;
+    padding:8px;
+    margin:8px;
+}
+
+input:disabled{
+    background:#ddd;
+    color:#777;
+    cursor:not-allowed;
+}
+
+button{
+    padding:10px 20px;
+    margin:5px;
+    cursor:pointer;
+}
+
+.reset{
+    background:#eee;
+    border:1px solid #aaa;
+}
+
+canvas{
+    border:1px solid #ccc;
+    margin-top:20px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>คำนวณ r = L² / (2H)</h2>
+
+<div style="
+margin:20px auto;
+padding:15px;
+max-width:600px;
+background:#eef6ff;
+border:1px solid #99c9ff;
+border-radius:10px;
+text-align:left;
+line-height:1.8;
+">
+
+<b>💡 วิธีใช้งาน</b>
+
+<ul style="margin-top:8px;">
+    <li>กรอกค่า <b>r</b>, <b>L</b> หรือ <b>H</b> เพียง <b>2 ค่า</b></li>
+    <li>เมื่อกรอกครบ 2 ค่า ช่องที่เหลือจะถูกล็อกโดยอัตโนมัติ</li>
+    <li>กดปุ่ม <b>คำนวณ</b></li>
+    <li>โปรแกรมจะคำนวณค่าที่เหลือ พร้อมแสดงวิธีทำและภาพประกอบ</li>
+    <li>กดปุ่ม <b>Reset</b> เพื่อเริ่มการคำนวณใหม่</li>
+</ul>
+
+<hr style="margin:12px 0;">
+
+<b>📖 ความหมายของตัวแปร</b>
+
+<ul style="margin-top:8px;">
+    <li><b>r</b> = รัศมีของวงกลม (Radius)</li>
+    <li><b>L</b> = ความยาวของคอร์ด (Chord Length)</li>
+    <li><b>H</b> = ระยะห่างระหว่างจุดปลายคอร์ดกับเส้นสัมผัสของวงกลม (Sagitta Height)</li>
+</ul>
+
+</div>
+
+<label>r:
+<input id="r" type="number" oninput="updateInputs()">
+</label>
+
+<label>L:
+<input id="L" type="number" oninput="updateInputs()">
+</label>
+
+<label>H:
+<input id="H" type="number" oninput="updateInputs()">
+</label>
+
+<br>
+
+<button onclick="calculate()">
+คำนวณ
+</button>
+
+<button class="reset" onclick="resetCalculator()">
+Reset
+</button>
+
+<h3 id="result"></h3>
+
+<div id="solution" style="
+margin:20px auto;
+padding:15px;
+max-width:600px;
+background:#f8f8f8;
+border:1px solid #ccc;
+border-radius:10px;
+text-align:left;
+line-height:1.8;
+"></div>
+
+<canvas id="canvas" width="600" height="500"></canvas>
+
+</div>
+
+<script>
+
+const rInput=document.getElementById("r");
+const LInput=document.getElementById("L");
+const HInput=document.getElementById("H");
+
+
+/* =========================
+   ระบบคำนวณ
+========================= */
+
+function calculate(){
+
+let r=parseFloat(rInput.value);
+let L=parseFloat(LInput.value);
+let H=parseFloat(HInput.value);
+
+let count=[r,L,H].filter(v=>!isNaN(v)).length;
+
+if(count!==2){
+
+    result.textContent="กรุณากรอกข้อมูลเพียง 2 ค่า";
+    document.getElementById("solution").innerHTML="";
+    return;
+
+}
+
+
+/* จำไว้ว่าค่าไหนเป็นค่าที่ต้องคำนวณ */
+
+const missingR=isNaN(r);
+const missingL=isNaN(L);
+const missingH=isNaN(H);
+
+
+/* ตรวจสอบค่าที่ไม่ถูกต้อง */
+
+if((!missingR && r<=0) ||
+   (!missingL && L<=0) ||
+   (!missingH && H<=0)){
+
+    result.textContent="กรุณากรอกค่าที่มากกว่า 0";
+    return;
+
+}
+
+
+/* คำนวณค่าที่หายไป */
+
+if(missingR){
+
+    r=L*L/(2*H);
+
+}
+
+else if(missingL){
+
+    L=Math.sqrt(2*r*H);
+
+}
+
+else if(missingH){
+
+    H=L*L/(2*r);
+
+}
+
+
+/* แสดงค่าที่คำนวณได้ */
+
+rInput.value=r.toFixed(2);
+LInput.value=L.toFixed(2);
+HInput.value=H.toFixed(2);
+
+
+result.innerHTML=
+`
+r = ${r.toFixed(2)}
+<br>
+L = ${L.toFixed(2)}
+<br>
+H = ${H.toFixed(2)}
+`;
+
+
+/* =========================
+   แสดงวิธีทำ
+========================= */
+
+let solution="";
+
+
+/* กรณีหา r */
+
+if(missingR){
+
+    solution=`
+    <b>📐 วิธีทำ: หาค่า r</b><br><br>
+
+    จากสูตร<br>
+    <b>r = L² / (2H)</b><br><br>
+
+    แทนค่า L และ H<br>
+    r = ${L.toFixed(2)}² / (2 × ${H.toFixed(2)})<br><br>
+
+    คำนวณ<br>
+    r = ${(L*L).toFixed(2)} / ${(2*H).toFixed(2)}<br><br>
+
+    ดังนั้น<br>
+    <b>r = ${r.toFixed(2)}</b>
+    `;
+
+}
+
+
+/* กรณีหา L */
+
+else if(missingL){
+
+    solution=`
+    <b>📐 วิธีทำ: หาค่า L</b><br><br>
+
+    จากสูตร<br>
+    <b>r = L² / (2H)</b><br><br>
+
+    ย้ายข้างเพื่อหา L<br>
+    <b>L = √(2rH)</b><br><br>
+
+    แทนค่า r และ H<br>
+    L = √(2 × ${r.toFixed(2)} × ${H.toFixed(2)})<br><br>
+
+    คำนวณ<br>
+    L = √${(2*r*H).toFixed(2)}<br><br>
+
+    ดังนั้น<br>
+    <b>L = ${L.toFixed(2)}</b>
+    `;
+
+}
+
+
+/* กรณีหา H */
+
+else if(missingH){
+
+    solution=`
+    <b>📐 วิธีทำ: หาค่า H</b><br><br>
+
+    จากสูตร<br>
+    <b>r = L² / (2H)</b><br><br>
+
+    ย้ายข้างเพื่อหา H<br>
+    <b>H = L² / (2r)</b><br><br>
+
+    แทนค่า L และ r<br>
+    H = ${L.toFixed(2)}² / (2 × ${r.toFixed(2)})<br><br>
+
+    คำนวณ<br>
+    H = ${(L*L).toFixed(2)} / ${(2*r).toFixed(2)}<br><br>
+
+    ดังนั้น<br>
+    <b>H = ${H.toFixed(2)}</b>
+    `;
+
+}
+
+document.getElementById("solution").innerHTML=solution;
+
+
+/* วาดภาพ */
+
+draw(r,L,H);
+
+}
+
+
+/* =========================
+   ระบบล็อกช่อง
+========================= */
+
+function updateInputs(){
+
+    const inputs=[
+        rInput,
+        LInput,
+        HInput
+    ];
+
+    const filled=inputs.filter(
+        input=>input.value!==""
+    );
+
+
+    /* ถ้ายังมีข้อมูลน้อยกว่า 2 ค่า */
+
+    if(filled.length<2){
+
+        inputs.forEach(
+            input=>input.disabled=false
+        );
+
+        return;
+
+    }
+
+
+    /* เมื่อมีข้อมูล 2 ค่า
+       ล็อกช่องที่ยังว่าง */
+
+    inputs.forEach(input=>{
+
+        input.disabled=
+            input.value==="";
+
+    });
+
+}
+
+
+/* =========================
+   ระบบ Reset
+========================= */
+
+function resetCalculator(){
+
+    /* ล้างค่าทั้งหมด */
+
+    rInput.value="";
+    LInput.value="";
+    HInput.value="";
+
+
+    /* ปลดล็อกช่องทั้งหมด */
+
+    rInput.disabled=false;
+    LInput.disabled=false;
+    HInput.disabled=false;
+
+
+    /* ล้างผลลัพธ์ */
+
+    document.getElementById("result").innerHTML="";
+
+
+    /* ล้างวิธีทำ */
+
+    document.getElementById("solution").innerHTML="";
+
+
+    /* ล้าง Canvas */
+
+    const c=document.getElementById("canvas");
+    const ctx=c.getContext("2d");
+
+    ctx.clearRect(
+        0,
+        0,
+        c.width,
+        c.height
+    );
+
+}
+
+
+/* =========================
+   วาดภาพ
+========================= */
+
+function draw(r,L,H){
+
+const c=document.getElementById("canvas");
+const ctx=c.getContext("2d");
+
+ctx.clearRect(
+    0,
+    0,
+    c.width,
+    c.height
+);
+
+
+/* กำหนดขนาดภาพ */
+
+const scale=250/(r*1.2);
+
+const cx=300;
+const ground=420;
+
+const R=r*scale;
+
+
+/* เส้นสัมผัส */
+
+ctx.lineWidth=3;
+ctx.strokeStyle="black";
+
+ctx.beginPath();
+
+ctx.moveTo(80,ground);
+ctx.lineTo(520,ground);
+
+ctx.stroke();
+
+
+/* วงกลม */
+
+ctx.beginPath();
+
+ctx.arc(
+    cx,
+    ground-R,
+    R,
+    0,
+    Math.PI*2
+);
+
+ctx.stroke();
+
+
+/* จุดบนวงกลม */
+
+const y=H*scale;
+
+const x=Math.sqrt(
+    Math.max(
+        0,
+        2*r*H-H*H
+    )
+)*scale;
+
+const px=cx+x;
+const py=ground-y;
+
+
+/* เส้น L */
+
+ctx.strokeStyle="red";
+
+ctx.beginPath();
+
+ctx.moveTo(
+    cx,
+    ground
+);
+
+ctx.lineTo(
+    px,
+    py
+);
+
+ctx.stroke();
+
+
+/* จุดปลาย */
+
+ctx.fillStyle="red";
+
+ctx.beginPath();
+
+ctx.arc(
+    px,
+    py,
+    7,
+    0,
+    6.28
+);
+
+ctx.fill();
+
+
+/* ตัว L */
+
+ctx.font="bold 28px Arial";
+ctx.fillStyle="red";
+
+ctx.fillText(
+    "L",
+    (cx+px)/2-15,
+    (py+ground)/2-12
+);
+
+
+/* เส้น H */
+
+ctx.strokeStyle="blue";
+
+ctx.beginPath();
+
+ctx.moveTo(
+    px,
+    ground
+);
+
+ctx.lineTo(
+    px,
+    py
+);
+
+ctx.stroke();
+
+
+/* ตัว H */
+
+ctx.fillStyle="blue";
+ctx.font="bold 28px Arial";
+
+ctx.fillText(
+    "H",
+    px+18,
+    (py+ground)/2
+);
+
+
+/* ค่า r อยู่กลางวงกลม */
+
+ctx.fillStyle="black";
+ctx.font="bold 24px Arial";
+
+ctx.textAlign="center";
+ctx.textBaseline="middle";
+
+ctx.fillText(
+    "r = " + r.toFixed(2),
+    cx,
+    ground-R
+);
+
+
+ctx.textAlign="start";
+ctx.textBaseline="alphabetic";
+
+}
+
+</script>
+
+</body>
+</html>
